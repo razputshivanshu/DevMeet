@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------------------------------------------------------------------------- */
+/*  DevMeet design tokens — cohesive, engineering-focused aesthetic.          */
+/*  Light theme: parchment on ink. Dark theme: near-black with iridescent     */
+/*  accent. Not the usual purple gradient soup.                               */
+/* -------------------------------------------------------------------------- */
+
+@layer base {
+  :root {
+    --background: 42 25% 97%;
+    --foreground: 220 25% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 8%;
+    --primary: 158 65% 32%;
+    --primary-foreground: 45 30% 96%;
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 25% 15%;
+    --muted: 220 15% 94%;
+    --muted-foreground: 220 12% 42%;
+    --accent: 24 90% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 158 65% 32%;
+    --radius: 0.6rem;
+    --sidebar: 220 25% 10%;
+    --sidebar-foreground: 45 30% 92%;
+    --sidebar-accent: 158 65% 40%;
+    --sidebar-border: 220 20% 18%;
+  }
+
+  .dark {
+    --background: 220 25% 6%;
+    --foreground: 45 20% 94%;
+    --card: 220 22% 9%;
+    --card-foreground: 45 20% 94%;
+    --popover: 220 22% 9%;
+    --popover-foreground: 45 20% 94%;
+    --primary: 158 60% 48%;
+    --primary-foreground: 220 25% 6%;
+    --secondary: 220 15% 15%;
+    --secondary-foreground: 45 15% 88%;
+    --muted: 220 15% 14%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 24 90% 60%;
+    --accent-foreground: 220 25% 6%;
+    --destructive: 0 62% 48%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 158 60% 48%;
+    --sidebar: 220 25% 4%;
+    --sidebar-foreground: 45 20% 92%;
+    --sidebar-accent: 158 60% 48%;
+    --sidebar-border: 220 15% 12%;
+  }
+
+  * {
+    @apply border-border;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'ss01', 'cv01', 'cv11';
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.55);
+  }
+  .grain {
+    background-image: radial-gradient(hsl(var(--muted-foreground) / 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}

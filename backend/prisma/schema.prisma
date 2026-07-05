@@ -1,0 +1,375 @@
+// DevMeet Prisma Schema
+// Modular monolith — all domain models live here but are consumed by feature modules.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum TeamRole {
+  LEAD
+  MEMBER
+}
+
+enum ChannelType {
+  PUBLIC
+  PRIVATE
+  DIRECT
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  SYSTEM
+}
+
+enum KanbanStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+// ============================================================
+// USER
+// ============================================================
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  username      String       @unique
+  name          String
+  password      String? // null for OAuth-only users
+  avatarUrl     String?
+  bio           String?
+  provider      AuthProvider @default(LOCAL)
+  providerId    String? // Google sub
+  isActive      Boolean      @default(true)
+  emailVerified Boolean      @default(false)
+  lastSeenAt    DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relations
+  organizations       OrganizationMember[]
+  teams               TeamMember[]
+  channels            ChannelMember[]
+  messages            Message[]
+  reactions           MessageReaction[]
+  createdOrgs         Organization[]        @relation("OrgCreator")
+  createdTeams        Team[]                @relation("TeamCreator")
+  createdChannels     Channel[]             @relation("ChannelCreator")
+  invitesSent         OrganizationInvite[]  @relation("InviteSender")
+  passwordResets      PasswordResetToken[]
+  meetingsCreated     Meeting[]             @relation("MeetingCreator")
+  meetingParticipants MeetingParticipant[]
+  kanbanCards         KanbanCard[]          @relation("CardAssignee")
+  kanbanCardsCreated  KanbanCard[]          @relation("CardCreator")
+  uploads             Upload[]
+
+  @@index([email])
+  @@index([username])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+}
+
+// ============================================================
+// ORGANIZATION
+// ============================================================
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User                 @relation("OrgCreator", fields: [createdById], references: [id])
+  members   OrganizationMember[]
+  teams     Team[]
+  channels  Channel[]
+  invites   OrganizationInvite[]
+  meetings  Meeting[]
+
+  @@index([slug])
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrgRole  @default(MEMBER)
+  joinedAt       DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model OrganizationInvite {
+  id             String    @id @default(cuid())
+  organizationId String
+  email          String
+  role           OrgRole   @default(MEMBER)
+  token          String    @unique
+  invitedById    String
+  acceptedAt     DateTime?
+  expiresAt      DateTime
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("InviteSender", fields: [invitedById], references: [id])
+
+  @@index([token])
+  @@index([email])
+}
+
+// ============================================================
+// TEAM
+// ============================================================
+
+model Team {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("TeamCreator", fields: [createdById], references: [id])
+  members      TeamMember[]
+  channels     Channel[]
+  kanbanBoards KanbanBoard[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  teamId   String
+  userId   String
+  role     TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+// ============================================================
+// CHANNEL
+// ============================================================
+
+model Channel {
+  id             String      @id @default(cuid())
+  organizationId String
+  teamId         String?
+  name           String
+  topic          String?
+  type           ChannelType @default(PUBLIC)
+  createdById    String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  team         Team?           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdBy    User            @relation("ChannelCreator", fields: [createdById], references: [id])
+  members      ChannelMember[]
+  messages     Message[]
+
+  @@unique([organizationId, name])
+  @@index([teamId])
+}
+
+model ChannelMember {
+  id        String   @id @default(cuid())
+  channelId String
+  userId    String
+  joinedAt  DateTime @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([userId])
+}
+
+// ============================================================
+// MESSAGES
+// ============================================================
+
+model Message {
+  id        String      @id @default(cuid())
+  channelId String
+  userId    String
+  content   String
+  type      MessageType @default(TEXT)
+  fileUrl   String?
+  fileName  String?
+  fileSize  Int?
+  editedAt  DateTime?
+  deletedAt DateTime?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  channel   Channel           @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions MessageReaction[]
+
+  @@index([channelId, createdAt])
+  @@index([userId])
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+}
+
+// ============================================================
+// MEETINGS
+// ============================================================
+
+model Meeting {
+  id             String        @id @default(cuid())
+  organizationId String
+  roomCode       String        @unique
+  title          String
+  status         MeetingStatus @default(SCHEDULED)
+  createdById    String
+  startedAt      DateTime?
+  endedAt        DateTime?
+  createdAt      DateTime      @default(now())
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User                 @relation("MeetingCreator", fields: [createdById], references: [id])
+  participants MeetingParticipant[]
+
+  @@index([organizationId])
+  @@index([roomCode])
+}
+
+model MeetingParticipant {
+  id        String    @id @default(cuid())
+  meetingId String
+  userId    String
+  joinedAt  DateTime  @default(now())
+  leftAt    DateTime?
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+}
+
+// ============================================================
+// KANBAN
+// ============================================================
+
+model KanbanBoard {
+  id          String   @id @default(cuid())
+  teamId      String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team  Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  cards KanbanCard[]
+
+  @@index([teamId])
+}
+
+model KanbanCard {
+  id           String       @id @default(cuid())
+  boardId      String
+  title        String
+  description  String?
+  status       KanbanStatus @default(TODO)
+  position     Int          @default(0)
+  assigneeId   String?
+  createdById  String
+  dueDate      DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  board     KanbanBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  assignee  User?       @relation("CardAssignee", fields: [assigneeId], references: [id])
+  createdBy User        @relation("CardCreator", fields: [createdById], references: [id])
+
+  @@index([boardId, status])
+  @@index([assigneeId])
+}
+
+// ============================================================
+// UPLOADS
+// ============================================================
+
+model Upload {
+  id          String   @id @default(cuid())
+  userId      String
+  originalName String
+  storedName  String
+  mimeType    String
+  size        Int
+  url         String
+  purpose     String   @default("general") // avatar | attachment | general
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
