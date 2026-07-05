@@ -1,12 +1,12 @@
 import crypto from 'crypto';
 import { OrgRole } from '@prisma/client';
 import { organizationRepository, OrganizationRepository } from './organization.repository';
+import type { AuthUser } from '../../core/middleware/auth';
 import type {
   CreateOrganizationDto,
   InviteMemberDto,
   UpdateMemberRoleDto,
 } from './organization.dto';
-import { userRepository } from '../users/user.repository';
 import {
   BadRequestError,
   ConflictError,
@@ -48,11 +48,9 @@ export class OrganizationService {
 
   async invite(userId: string, organizationId: string, dto: InviteMemberDto) {
     await this.ensureRole(organizationId, userId, ['OWNER', 'ADMIN']);
-    // If user already exists and is already a member, block
-    const invitee = await userRepository.findMany([]).then(() => null); // no-op typing
     const token = crypto.randomBytes(24).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7d
-    const invite = await this.repo.createInvite({
+    return this.repo.createInvite({
       email: dto.email,
       role: dto.role as OrgRole,
       token,
@@ -60,8 +58,6 @@ export class OrganizationService {
       organization: { connect: { id: organizationId } },
       invitedBy: { connect: { id: userId } },
     });
-    void invitee;
-    return invite;
   }
 
   async listInvites(userId: string, organizationId: string) {
@@ -69,16 +65,22 @@ export class OrganizationService {
     return this.repo.listInvites(organizationId);
   }
 
-  async acceptInvite(userId: string, token: string) {
+  async acceptInvite(user: AuthUser, token: string) {
     const invite = await this.repo.findInviteByToken(token);
     if (!invite) throw new BadRequestError('Invalid invite token');
     if (invite.acceptedAt) throw new BadRequestError('Invite already accepted');
     if (invite.expiresAt < new Date()) throw new BadRequestError('Invite expired');
+    if (invite.email.toLowerCase() !== user.email.toLowerCase()) {
+      throw new ForbiddenError('Invite does not match the authenticated user');
+    }
 
-    const existing = await this.repo.getMembership(invite.organizationId, userId);
-    if (existing) throw new ConflictError('Already a member');
+    const existing = await this.repo.getMembership(invite.organizationId, user.id);
+    if (existing) {
+      await this.repo.markInviteAccepted(invite.id);
+      return this.repo.findById(invite.organizationId);
+    }
 
-    await this.repo.addMember(invite.organizationId, userId, invite.role);
+    await this.repo.addMember(invite.organizationId, user.id, invite.role);
     await this.repo.markInviteAccepted(invite.id);
     return this.repo.findById(invite.organizationId);
   }
@@ -90,13 +92,15 @@ export class OrganizationService {
     dto: UpdateMemberRoleDto,
   ) {
     await this.ensureRole(organizationId, actingUserId, ['OWNER']);
+    const target = await this.repo.getMembership(organizationId, targetUserId);
+    if (!target) throw new NotFoundError('Member not found');
     return this.repo.updateMemberRole(organizationId, targetUserId, dto.role as OrgRole);
   }
 
   async removeMember(actingUserId: string, organizationId: string, targetUserId: string) {
     await this.ensureRole(organizationId, actingUserId, ['OWNER', 'ADMIN']);
     const target = await this.repo.getMembership(organizationId, targetUserId);
-    if (!target) throw new NotFoundError('Member not found');
+    if (!target) return null;
     if (target.role === OrgRole.OWNER) throw new ForbiddenError('Cannot remove owner');
     return this.repo.removeMember(organizationId, targetUserId);
   }

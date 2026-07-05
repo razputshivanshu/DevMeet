@@ -28,7 +28,7 @@ export class OrganizationController {
     ok(res, await organizationService.listInvites(uid(req), req.params.organizationId));
 
   acceptInvite = async (req: Request, res: Response) =>
-    ok(res, await organizationService.acceptInvite(uid(req), req.body.token));
+    ok(res, await organizationService.acceptInvite(req.user!, req.body.token));
 
   updateMemberRole = async (req: Request, res: Response) =>
     ok(
