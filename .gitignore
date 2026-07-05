@@ -29,3 +29,9 @@ uploads/
 
 # prisma
 backend/prisma/migrations/.tmp
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
