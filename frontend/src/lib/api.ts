@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { env } from './env';
+import { useAuthStore } from '@/contexts/auth.store';
 
 const TOKEN_KEY = 'devmeet.token';
 
@@ -45,6 +46,7 @@ api.interceptors.response.use(
   (r) => r,
   (err: AxiosError) => {
     if (err.response?.status === 401) {
+      useAuthStore.getState().logout();
       const path = window.location.pathname;
       if (
         !path.startsWith('/login') &&

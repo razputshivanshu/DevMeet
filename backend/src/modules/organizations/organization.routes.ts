@@ -25,6 +25,7 @@ organizationRouter.post(
   validate(acceptInviteSchema),
   asyncHandler(organizationController.acceptInvite),
 );
+organizationRouter.get('/invites/pending', asyncHandler(organizationController.pendingInvites));
 organizationRouter.get('/:organizationId', asyncHandler(organizationController.get));
 organizationRouter.get('/:organizationId/members', asyncHandler(organizationController.members));
 organizationRouter.get(

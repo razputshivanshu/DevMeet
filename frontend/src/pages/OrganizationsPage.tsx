@@ -19,10 +19,11 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Link as RouterLink } from 'react-router-dom';
 
 export const OrganizationsPage = () => {
   const qc = useQueryClient();
-  const orgsQ = useQuery({ queryKey: ['orgs'], queryFn: orgService.list });
+  const orgsQ = useQuery({ queryKey: ['organizations'], queryFn: orgService.list });
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', slug: '', description: '' });
 
@@ -32,7 +33,7 @@ export const OrganizationsPage = () => {
       toast.success('Workspace created');
       setOpen(false);
       setForm({ name: '', slug: '', description: '' });
-      qc.invalidateQueries({ queryKey: ['orgs'] });
+      qc.invalidateQueries({ queryKey: ['organizations'] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -47,63 +48,68 @@ export const OrganizationsPage = () => {
             Every workspace has its own teams, channels, boards, and members.
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="create-org-button">
-              <Plus className="h-4 w-4" /> New workspace
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create a workspace</DialogTitle>
-              <DialogDescription>Give your team a home. You'll be the owner.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  data-testid="org-name"
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      name: e.target.value,
-                      slug: form.slug || e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="slug">Slug</Label>
-                <Input
-                  id="slug"
-                  data-testid="org-slug"
-                  value={form.slug}
-                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  data-testid="org-description"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={() => create.mutate(form)}
-                disabled={create.isPending || !form.name || !form.slug}
-                data-testid="org-submit"
-              >
-                {create.isPending ? 'Creating…' : 'Create'}
+        <div className="flex items-center gap-2">
+          <RouterLink to="/app/organizations/invites" className="text-sm text-primary hover:underline">
+            View pending invites
+          </RouterLink>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="create-org-button">
+                <Plus className="h-4 w-4" /> New workspace
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create a workspace</DialogTitle>
+                <DialogDescription>Give your team a home. You'll be the owner.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    data-testid="org-name"
+                    value={form.name}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        name: e.target.value,
+                        slug: form.slug || e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="slug">Slug</Label>
+                  <Input
+                    id="slug"
+                    data-testid="org-slug"
+                    value={form.slug}
+                    onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    data-testid="org-description"
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  onClick={() => create.mutate(form)}
+                  disabled={create.isPending || !form.name || !form.slug}
+                  data-testid="org-submit"
+                >
+                  {create.isPending ? 'Creating…' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

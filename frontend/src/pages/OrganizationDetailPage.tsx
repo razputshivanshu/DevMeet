@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export const OrganizationDetailPage = () => {
   const { orgId } = useParams<{ orgId: string }>();
@@ -30,6 +31,7 @@ export const OrganizationDetailPage = () => {
   const [invite, setInvite] = useState({ email: '', role: 'MEMBER' as 'ADMIN' | 'MEMBER' });
   const [open, setOpen] = useState(false);
   const [issuedToken, setIssuedToken] = useState<string | null>(null);
+  const { hasPermission } = usePermissions(orgQ.data?.myRole);
 
   const inviteMut = useMutation({
     mutationFn: (dto: { email: string; role: 'ADMIN' | 'MEMBER' }) =>
@@ -38,6 +40,7 @@ export const OrganizationDetailPage = () => {
       setIssuedToken((data as any)?.token ?? null);
       toast.success('Invite created');
       qc.invalidateQueries({ queryKey: ['org', orgId] });
+      qc.invalidateQueries({ queryKey: ['org', orgId, 'members'] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -55,7 +58,7 @@ export const OrganizationDetailPage = () => {
             <p className="mt-3 max-w-xl text-sm">{orgQ.data.description}</p>
           )}
         </div>
-        {(orgQ.data.myRole === 'OWNER' || orgQ.data.myRole === 'ADMIN') && (
+        {hasPermission('org:manageMembers') && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button data-testid="invite-member-button">

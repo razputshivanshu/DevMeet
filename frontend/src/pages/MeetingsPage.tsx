@@ -19,9 +19,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
+import { useAuthStore } from '@/contexts/auth.store';
 
 export const MeetingsPage = () => {
-  const orgId = useWorkspaceStore((s) => s.currentOrgId);
+  const orgId = useAuthStore((s) => s.activeOrgId);
   const nav = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);

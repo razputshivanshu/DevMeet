@@ -65,6 +65,12 @@ export class OrganizationService {
     return this.repo.listInvites(organizationId);
   }
 
+  async getPendingInvites(userId: string) {
+    const user = await this.repo.findUserById(userId);
+    if (!user) throw new NotFoundError('User not found');
+    return this.repo.listPendingInvitesByEmail(user.email);
+  }
+
   async acceptInvite(user: AuthUser, token: string) {
     const invite = await this.repo.findInviteByToken(token);
     if (!invite) throw new BadRequestError('Invalid invite token');

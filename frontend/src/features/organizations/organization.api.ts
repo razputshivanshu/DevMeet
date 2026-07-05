@@ -1,5 +1,5 @@
 import { api, request } from '@/lib/api';
-import type { OrgMember, Organization } from '@/types';
+import type { OrgMember, Organization, PendingInvite } from '@/types';
 
 export const orgService = {
   list: () => request<Organization[]>(() => api.get('/organizations')),
@@ -10,6 +10,7 @@ export const orgService = {
   invite: (id: string, dto: { email: string; role: 'ADMIN' | 'MEMBER' }) =>
     request<{ token: string; email: string }>(() => api.post(`/organizations/${id}/invites`, dto)),
   invites: (id: string) => request<any[]>(() => api.get(`/organizations/${id}/invites`)),
+  pendingInvites: () => request<PendingInvite[]>(() => api.get('/organizations/invites/pending')),
   acceptInvite: (token: string) =>
     request<Organization>(() => api.post('/organizations/invites/accept', { token })),
   updateMemberRole: (id: string, userId: string, role: 'OWNER' | 'ADMIN' | 'MEMBER') =>

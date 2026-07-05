@@ -16,6 +16,7 @@ import { MeetingRoomPage } from '@/pages/MeetingRoomPage';
 import { SearchPage } from '@/pages/SearchPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { LandingPage } from '@/pages/LandingPage';
+import { OrganizationInvites } from '@/pages/organizations/OrganizationInvites';
 
 export const AppRouter = () => (
   <Routes>
@@ -31,6 +32,7 @@ export const AppRouter = () => (
       <Route element={<AppShell />}>
         <Route path="/app" element={<DashboardPage />} />
         <Route path="/app/organizations" element={<OrganizationsPage />} />
+        <Route path="/app/organizations/invites" element={<OrganizationInvites />} />
         <Route path="/app/organizations/:orgId" element={<OrganizationDetailPage />} />
         <Route path="/app/teams" element={<TeamsPage />} />
         <Route path="/app/channels/:channelId" element={<ChannelPage />} />

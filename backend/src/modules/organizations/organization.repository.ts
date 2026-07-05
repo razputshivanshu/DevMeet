@@ -20,6 +20,13 @@ export class OrganizationRepository {
     return prisma.organization.findUnique({ where: { slug } });
   }
 
+  findUserById(id: string) {
+    return prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, username: true, name: true, avatarUrl: true },
+    });
+  }
+
   listForUser(userId: string) {
     return prisma.organization.findMany({
       where: { members: { some: { userId } } },
@@ -87,6 +94,21 @@ export class OrganizationRepository {
   listInvites(organizationId: string) {
     return prisma.organizationInvite.findMany({
       where: { organizationId, acceptedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  listPendingInvitesByEmail(email: string) {
+    return prisma.organizationInvite.findMany({
+      where: { email, acceptedAt: null },
+      include: {
+        organization: {
+          select: { id: true, name: true, slug: true },
+        },
+        invitedBy: {
+          select: { id: true, name: true, email: true, username: true },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

@@ -15,6 +15,15 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional().default(''),
   GOOGLE_CALLBACK_URL: z.string().default('http://localhost:8001/api/auth/google/callback'),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
+  // ... existing schema ...
+  // ... existing schema ...
+    SMTP_HOST: z.string().default('smtp.gmail.com'),
+    SMTP_PORT: z.number().default(587),
+    SMTP_SECURE: z.boolean().default(false),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_FROM: z.string().default('noreply@devmeet.io'),
+
 });
 
 const parsed = envSchema.safeParse(process.env);

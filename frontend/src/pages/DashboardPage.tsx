@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Activity, Hash, KanbanSquare, Users, Video } from 'lucide-react';
 import { useAuthStore } from '@/contexts/auth.store';
-import { useWorkspaceStore } from '@/contexts/workspace.store';
 import { teamService } from '@/features/teams/team.api';
 import { channelService } from '@/features/channels/channel.api';
 import { meetingService } from '@/features/meetings/meeting.api';
@@ -13,7 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 export const DashboardPage = () => {
   const user = useAuthStore((s) => s.user);
-  const orgId = useWorkspaceStore((s) => s.currentOrgId);
+  const orgId = useAuthStore((s) => s.activeOrgId);
 
   const teamsQ = useQuery({ queryKey: ['teams', 'mine'], queryFn: teamService.mine });
   const channelsQ = useQuery({

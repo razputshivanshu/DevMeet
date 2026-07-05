@@ -3,12 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Hash, MessageSquare, Search as SearchIcon, User, Users } from 'lucide-react';
 import { searchService } from '@/features/search/search.api';
-import { useWorkspaceStore } from '@/contexts/workspace.store';
+import { useAuthStore } from '@/contexts/auth.store';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const SearchPage = () => {
-  const orgId = useWorkspaceStore((s) => s.currentOrgId);
+  const orgId = useAuthStore((s) => s.activeOrgId);
   const [q, setQ] = useState('');
   const [debounced, setDebounced] = useState('');
   useEffect(() => {

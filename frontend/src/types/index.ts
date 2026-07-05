@@ -27,6 +27,18 @@ export interface Organization {
   _count?: { members: number; teams: number; channels: number };
 }
 
+export interface PendingInvite {
+  id: string;
+  email: string;
+  role: OrgRole;
+  token: string;
+  organizationId: string;
+  expiresAt: string;
+  createdAt: string;
+  organization: Pick<Organization, 'id' | 'name' | 'slug'>;
+  invitedBy?: Pick<User, 'id' | 'name' | 'email' | 'username'>;
+}
+
 export interface OrgMember {
   id: string;
   organizationId: string;

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Plus, Users, KanbanSquare, DoorOpen, LogIn } from 'lucide-react';
 import { teamService } from '@/features/teams/team.api';
-import { useWorkspaceStore } from '@/contexts/workspace.store';
+import { useAuthStore } from '@/contexts/auth.store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 
 export const TeamsPage = () => {
-  const orgId = useWorkspaceStore((s) => s.currentOrgId);
+  const orgId = useAuthStore((s) => s.activeOrgId);
   const qc = useQueryClient();
   const teamsQ = useQuery({
     queryKey: ['teams', 'org', orgId],

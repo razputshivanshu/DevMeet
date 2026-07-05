@@ -27,6 +27,9 @@ export class OrganizationController {
   listInvites = async (req: Request, res: Response) =>
     ok(res, await organizationService.listInvites(uid(req), req.params.organizationId));
 
+  pendingInvites = async (req: Request, res: Response) =>
+    ok(res, await organizationService.getPendingInvites(uid(req)));
+
   acceptInvite = async (req: Request, res: Response) =>
     ok(res, await organizationService.acceptInvite(req.user!, req.body.token));
 

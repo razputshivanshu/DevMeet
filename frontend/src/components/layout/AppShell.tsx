@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Building2,
   Compass,
@@ -18,7 +18,6 @@ import {
   Laptop,
 } from 'lucide-react';
 import { useAuthStore } from '@/contexts/auth.store';
-import { useWorkspaceStore } from '@/contexts/workspace.store';
 import { orgService } from '@/features/organizations/organization.api';
 import { channelService } from '@/features/channels/channel.api';
 import { cn } from '@/lib/utils';
@@ -63,23 +62,31 @@ const NavLink = ({
 );
 
 export const AppShell = () => {
-  const { user, logout } = useAuthStore();
-  const { currentOrgId, setOrg } = useWorkspaceStore();
+  const { user, logout, activeOrgId, setActiveOrg } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const nav = useNavigate();
+  const qc = useQueryClient();
 
-  const orgsQuery = useQuery({ queryKey: ['orgs'], queryFn: orgService.list });
+  const orgsQuery = useQuery({ queryKey: ['organizations'], queryFn: orgService.list });
   const channelsQuery = useQuery({
-    queryKey: ['channels', currentOrgId],
-    queryFn: () => channelService.list(currentOrgId!),
-    enabled: !!currentOrgId,
+    queryKey: ['channels', activeOrgId],
+    queryFn: () => channelService.list(activeOrgId!),
+    enabled: !!activeOrgId,
   });
 
   // Auto-select first org
   useEffect(() => {
-    if (!currentOrgId && orgsQuery.data?.length) setOrg(orgsQuery.data[0].id);
-  }, [currentOrgId, orgsQuery.data, setOrg]);
+    if (!activeOrgId && orgsQuery.data?.length) setActiveOrg(orgsQuery.data[0].id);
+  }, [activeOrgId, orgsQuery.data, setActiveOrg]);
+
+  useEffect(() => {
+    if (!activeOrgId) return;
+    qc.invalidateQueries({ queryKey: ['teams'] });
+    qc.invalidateQueries({ queryKey: ['channels'] });
+    qc.invalidateQueries({ queryKey: ['meetings'] });
+    qc.invalidateQueries({ queryKey: ['search'] });
+  }, [activeOrgId, qc]);
 
   const handleLogout = () => {
     disconnectSocket();
@@ -127,7 +134,7 @@ export const AppShell = () => {
                     Workspace
                   </div>
                   <div className="truncate text-sm font-medium">
-                    {orgsQuery.data?.find((o) => o.id === currentOrgId)?.name ?? 'No workspace'}
+                    {orgsQuery.data?.find((o) => o.id === activeOrgId)?.name ?? 'No workspace'}
                   </div>
                 </div>
                 <Building2 className="h-4 w-4 opacity-60" />
@@ -139,7 +146,7 @@ export const AppShell = () => {
                 <DropdownMenuItem
                   key={o.id}
                   data-testid={`org-option-${o.slug}`}
-                  onClick={() => setOrg(o.id)}
+                  onClick={() => setActiveOrg(o.id)}
                 >
                   <Building2 className="h-4 w-4" />
                   <span className="truncate">{o.name}</span>
